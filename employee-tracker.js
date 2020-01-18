@@ -67,6 +67,12 @@ function startEmployeeTracker() {
                 case "Add An Employee":
                     addEmployee();
                     break;
+                case "Add A Department":
+                    addDepartment();
+                    break;
+                case "Add A Role":
+                    addRole();
+                    break;
                 default:
                     connection.end();
                     break;
@@ -202,6 +208,55 @@ function addEmployee(){
                         );
                     });
         });
+    });
+}
+
+function addRole(){
+    let departmentList = [];
+    let departmentIDList = [];
+    getDepartmentData(function(data){
+        for(let i = 0; i < data.length; i++){
+            departmentList.push(data[i].name);
+            departmentIDList.push(data[i].id);
+        }
+        inquirer
+            .prompt([
+                {
+                    type: "input",
+                    name: "title",
+                    message: "Enter role title: "
+                },
+                {
+                    type: "input",
+                    name: "salary",
+                    message: "Enter salary: "
+                },
+                {
+                    type: "list",
+                    name: "department",
+                    message: "Which department does this role belong to?",
+                    choices: departmentList
+                }
+            ]).then(function(ans){
+                let department_id;
+                for(let i = 0; i < departmentList.length; i++){
+                    if(departmentList[i] === ans.department){
+                        department_id = departmentIDList[i];
+                    }
+                }
+                connection.query(
+                    `
+                    INSERT INTO role (title, salary, department_id)
+                    VALUES(?,?,?);
+                    `,
+                    [ans.title, ans.salary, department_id],
+                    function(err, res){
+                        if(err) throw err;
+                        console.log("Successfully added role!");
+                        startEmployeeTracker();
+                    }
+                );
+            });
     });
 }
 
