@@ -73,6 +73,9 @@ function startEmployeeTracker() {
                 case "Add A Role":
                     addRole();
                     break;
+                case "Update Employee Role":
+                    updateEmployeeRole();
+                    break;
                 default:
                     connection.end();
                     break;
@@ -211,6 +214,27 @@ function addEmployee(){
     });
 }
 
+function addDepartment(){
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                name: "name",
+                message: "Enter department name: "
+            }
+        ]).then(function(ans){
+            connection.query(
+                "INSERT INTO department(name) VALUES (?)",
+                [ans.name],
+                function(err,res){
+                    if(err) throw err;
+                    console.log("Successfully added department!");
+                    startEmployeeTracker();
+                }
+            );
+        });
+}
+
 function addRole(){
     let departmentList = [];
     let departmentIDList = [];
@@ -257,6 +281,67 @@ function addRole(){
                     }
                 );
             });
+    });
+}
+
+function updateEmployeeRole(){
+    let employeeList = [];
+    let employeeIDList = [];
+    let roleList = [];
+    let roleIDList = [];
+
+    getEmployeeData(function(data){
+        for(let i = 0; i < data.length; i++){
+            let employeeName = data[i].first_name + " " + data[i].last_name;
+            employeeList.push(employeeName);
+            employeeIDList.push(data[i].id);
+        }
+        getRoleData(function(data){
+            for(let i = 0; i < data.length; i++){
+                roleList.push(data[i].title);
+                roleIDList.push(data[i].id);
+            }
+            inquirer
+                .prompt([
+                    {
+                        type: "list",
+                        name: "employee",
+                        message: "Which employee's role would you like to update?",
+                        choices: employeeList
+                    },
+                    {
+                        type: "list",
+                        name: "role",
+                        message: "Choose the employee's new role.",
+                        choices: roleList
+                    }
+                ]).then(function(ans){
+                    let role_id;
+                    let employee_id;
+
+                    for(let i = 0; i < roleList.length; i++){
+                        if(roleList[i] === ans.role){
+                            role_id = roleIDList[i];
+                        }
+                    }
+                    for(let i = 0; i < employeeList.length; i++){
+                        if(employeeList[i] === ans.employee){
+                            employee_id = employeeIDList[i];
+                        }
+                    }
+                    connection.query(
+                        `
+                        UPDATE employee SET role_id = ? WHERE id = ?;
+                        `,
+                        [role_id, employee_id],
+                        function(err, res){
+                            if(err) throw err;
+                            console.log("Successfully updated role!");
+                            startEmployeeTracker();
+                        }
+                    );
+                });
+        });
     });
 }
 
